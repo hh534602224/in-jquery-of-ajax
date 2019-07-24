@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<title>表单注册</title>
+	<style>
+		form {
+			padding-top: 100px;
+			padding-left: 100px;
+		}
+
+		form>* {
+			margin-bottom: 15px;
+			position: relative;
+		}
+
+		form-item input {
+			height: 32px;
+			border: none;
+			width: 500px;
+			box-shadow: 0 0 0 1px #e7e7e7 inset;
+			text-indent: 8px;
+		}
+
+		.pre_register,
+		.register {
+			display: inline-block;
+			width: 120px;
+			line-height: 40px;
+			border-radius: 6px;
+			color: #fff;
+			font-size: 16px;
+			text-align: center;
+			cursor: pointer;
+			margin-top: 20px;
+			text-decoration: none;
+			margin-left: 100px;
+		}
+
+		.register {
+			background-color: dodgerblue;
+			border: none;
+			outline: none;
+		}
+
+		.register:hover {
+			background-color: deepskyblue;
+		}
+
+		.disable {
+			background-color: #666;
+		}
+
+		.error::after {
+			position: absolute;
+			top: 50%;
+			transform: translate(8px, -50%);
+			color: rgb(224, 51, 51);
+			content: attr(data-error);
+		}
+
+		.correct::after {
+			position: absolute;
+			top: 50%;
+			transform: translate(8px, -50%);
+			color: rgb(95, 238, 95);
+			content: attr(data-correct);
+		}
+
+		form-item {
+			display: block;
+		}
+
+		#toast {
+			position: fixed;
+			top: 0;
+			left: 0;
+			bottom: 0;
+			right: 0;
+			z-index: 9;
+		}
+
+		#toast span {
+			padding: 8px 15px;
+			background-color: rgba(0, 0, 0, 0.7);
+			color: #fff;
+			position: absolute;
+			left: 50%;
+			top: 50%;
+			transform: translate(-50%, -50%);
+			border-radius: 4px;
+			-webkit-user-select: none;
+		}
+	</style>
+</head>
+
+<body>
+
+	<form>
+		<form-item class="name">
+			用&ensp;户&ensp;名：<input class="username" type="text" placeholder="请输入用户名" name='userName' required="true" />
+		</form-item>
+
+		<form-item class="pwd">
+			密&emsp;&emsp;码：<input type="password" placeholder="请输入密码" name='password' required="true" />
+		</form-item>
+
+		<form-item class="repwd">
+			确认密码：<input type="password" placeholder="请输入密码" required="true" />
+		</form-item>
+
+		<input type="submit" class="register" value="注册">
+	</form>
+</body>
+<script src="../static/js/jquery.js"></script>
+<script src="../static/js/extend.js"></script>
+<script>
+	/* // jq getError 方法，在元素后方显示错误提示，
+	用法 $('tag').getError('信息')
+
+	// jq getCorrect 方法，在元素后方显示成功提示，
+	用法 $('tag').getCorrect('信息')
+
+	// jq checkForm 方法，检测表单是否有错误存在，
+	有错误返回false, 否则返回true, 用法 $(表单元素).checkForm()
+
+	// jq toast 方法, 弹出小黑提示框，
+	用法 $.fn.toast('信息')
+
+	// serialize 方法, 格式化post提交的参数，
+	用法 serialize(表单元素) */
+
+  // 用户注册
+	// 当用户名的框失去焦点时，验证输入框内的内容
+	$('.username').blur(function () {
+    // 获取输入框的内容
+    let user = $('.username').val()
+    // 当输入不为空才执行，不然不执行
+		if (user != '') {
+      // 调用数据库实例
+      let name = new XMLHttpRequest();
+      // 发送有用户名的报文
+			name.open('get', 'http://127.0.0.1:8080/isUserNameExist?userName=' + user);
+      name.send();
+      // 监听事件，收取返回报文
+			name.onreadystatechange = function () {
+				if (name.status === 200 && name.readyState === 4) {
+					// console.log(name.responseText)
+          let sum = JSON.parse(name.responseText)
+          // 按照返回的报文可知，sum.code===200就是用户名可用
+					if (sum.code === 200) {
+            $('.name').getCorrect(sum.msg)
+					} else {
+						$('.name').getError(sum.msg)
+					}
+					// console.log(sum)
+				}
+			}
+		}
+  })
+// 密码输入框相同验证
+$('.repwd>input').blur(function(){
+  // 2个空都填了就执行
+if ($('.pwd>input').val()!=''&&$('.repwd>input').val()!=''){
+  // 获取2个空的内容
+  let one=$('.pwd>input').val()
+  let tow=$('.repwd>input').val()
+  // 判断是否相同
+  if (one===tow){
+    $('.repwd').getCorrect('上下密码一致')
+  }else{
+    $('.repwd').getError('密码与上面的不一致')
+  }
+}
+})
+// 注册form表单的提交事件
+$('form').on('submit',function(e){
+      // 阻止submit的默认跳转事件
+  window.event.preventDefault();
+// 封装好的用来验证表单数据是否有误的用法吗，正确的话返回true，否则false，需要结合上面的提示来用
+  if ($('form').checkForm()){
+    // 表单数据正确
+    let ok=new XMLHttpRequest();
+    ok.open('post','http://127.0.0.1:8080/doRegister')
+    // 设置请求的表头，post的固定用法
+    ok.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    // $('form').serialize()就是表单的用户账号和密码，使用send发送出去
+    ok.send($('form').serialize());
+      // console.log($('form').serialize()) ;
+    ok.onreadystatechange=function(){
+      if (ok.status===200&&ok.readyState===4){
+              let sum=JSON.parse(ok.responseText)
+              // 根据返回的信息执行程序
+              if(sum.code===200){
+                alert(sum.msg)
+                // 刷新页面
+                window.location.reload()
+              }
+      }
+    }
+  }else{
+    $.fn.toast('大兄弟，请先正确填好表单再说注册啦')
+  }
+
+
+})
+  
+
+</script>
+
+</html>

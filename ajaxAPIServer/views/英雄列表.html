@@ -1,0 +1,158 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>英雄列表</title>
+  <link rel="stylesheet" href="../static/css/bootstrap.css">
+  <style>
+    .hero-list img {
+      width: 50px;
+      height: 50px;
+      display: block
+    }
+
+    .hero-list td {
+      height: 50px;
+      line-height: 50px;
+    }
+    
+  </style>
+</head>
+<body>
+  <header>
+    <div class="page-header container">
+      <h1>王者荣耀 <small>英雄管理器</small></h1>
+
+      <a href="javascript:void(0);" class="btn btn-exit btn-primary" hidden style='float:right;'>退出</a>
+      <a href="./用户登录.html" class="btn btn-login btn-success" style='float:right'>登录</a>
+    </div>
+  </header>
+  <div class="container hero-list">
+    <a class="btn btn-add btn-success pull-right" hidden href="./添加英雄.html">添加英雄</a>
+    <table class="table table-hover" hidden>
+      <thead>
+        <tr>
+          <th>编号</th>
+          <th>名称</th>
+          <th>性别</th>
+          <th>头像</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <!-- <tr>
+          <td>1</td>
+          <td>狗蛋</td>
+          <td>男</td>
+          <td><img src="../static/images/0.jpg"></td>
+          <td><a href="./edit.html?id=1">修改</a> 
+            <a data-id="1" href="javscript:void(0);">删除</a>
+          </td>
+        </tr> -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="modelId" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">提示</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            你确定要删除吗？
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary btn-sure-del" data-id="null">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="../static/js/jquery.js"></script>
+<script src="../static/js//ajax.js"></script>
+<script src="../static/js/template-web.js"></script>
+<script>
+  ;$(function(){
+    // 把不该显示的隐藏（没登录前的状态）
+    $('.btn-login').attr('hidden', false);
+    $(".btn-exit").attr('hidden', true);
+    $(".btn-add").attr('hidden', true);
+    $(".table").attr('hidden', true);
+
+let userId = localStorage.getItem('userId');
+  if (userId === null) {
+    alert('你还没有登陆,请登录后再访问')
+    location.href = './用户登录.html'
+  } else {
+    // 登录后
+    $('.btn-login').attr('hidden', true);
+    $(".btn-exit").attr('hidden', false);
+    $(".btn-add").attr('hidden', false);
+    $(".table").attr('hidden', false);
+    $.ajax({
+      type:'post',
+      url:'http://127.0.0.1:8080/getAllHero',
+      success:function(e){
+        // 获取数据成功
+        if (e.code===200){
+        //  console.log(e.data[0]) 
+        // 使用template渲染数据
+        let html=template('tp',e.data);
+        $('tbody').append(html);
+        }
+      }
+    })
+  }
+  // 删除英雄数据,利用委托事件完成
+$('#tbody').on('click','td>a:nth-child(2)',function(){
+// console.log(this)
+let id=$(this).attr('data-id')
+let dianthis=this;
+// console.log(id)
+// 利用bootstrap的一个弹出框
+let sure = confirm('确定要删除吗？');
+// console.log(sure);
+if (sure!=true){
+return;
+}else{
+  $.ajax({
+    type:'get',
+    url:'http://127.0.0.1:8080/deleteHeroById',
+    data:{id:id},//jq里的data是对象，为了加入多样数据发送
+    success:function(hh){
+      // console.log(hh.code)
+      if(hh.code===200){
+        // 弹框提示删除成功
+        alert(hh.msg);
+        // 当前点击的删除所在的一列英雄信息在页面上删除
+        $(dianthis).parents('tr').remove();
+      }
+    }
+  })
+}
+})
+});
+</script>
+<script type="=text/tempalte"  id="tp">
+{{each $data val}}
+<tr>
+    <td>{{val.id}}</td>
+    <td>{{val.name}}</td>
+    <td>{{val.gender}}</td>
+    <td><img src="../static/images/{{val.img}}"></td>
+    <td><a href="./edit.html?id={{val.id}}">修改</a> 
+      <a data-id="{{val.id}}" href="javscript:void(0);">删除</a>
+    </td>
+  </tr>
+{{/each}}
+
+</script>
+</html>

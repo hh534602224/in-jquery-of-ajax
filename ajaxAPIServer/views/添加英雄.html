@@ -1,0 +1,128 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Hero - Admin</title>
+  <link rel="stylesheet" href="../static/css/bootstrap.css">
+  <style>
+    .hero-list img {
+      width: 50px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="page-header container">
+      <h1>王者荣耀 <small>英雄管理器</small></h1>
+    </div>
+  </header>
+  <div class="container hero-list">
+    <form id='myform'>
+      <input type="hidden" name="img" value="0.jpg" id="headSrc">
+      <table class="table table-hover">
+        <tbody>
+          <tr>
+            <td>姓名：</td>
+            <td><input type="text" name="name" class="username"></td>
+          </tr>
+          <tr>
+            <td>性别：</td>
+            <td><input id="nan" name="gender" checked value="男" type="radio"><label for="nan">男</label> <input name="gender"
+                value="女" type="radio" id="nv"><label for="nv">女</label></td>
+          </tr>
+          <tr>
+            <td>头像：</td>
+            <td><img src="../static/images/0.jpg" alt="" id="photo" width="100">
+              <input type="file" id="img"></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td><input class="btn btn-primary" type="button" id="sub" value="新增"></td>
+          </tr>
+        </tbody>
+      </table>
+    </form>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="modelId" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">提水</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="container-fluid">
+            新增失败
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+<script src="../static/js/jquery.js"></script>
+<script>
+  // 图片的添加
+  // 先注册点击事件
+//   console.log($('#headSrc').val())
+  $('#img').on('change', function () {
+    // console.log(this.files)
+    // 获取上传的文件的相关信息
+    let files = this.files[0];
+    // console.log(files)
+    // 利用formdata吧文件转换成文件流
+    let fs = new FormData();
+    // fd.append(键,值); 服务器会根据键得到对应的值
+    fs.append('pic', files);
+    let xhr = new XMLHttpRequest()
+    xhr.open('post', 'http://127.0.0.1:8080/uploadHeadImg');
+    // 如果使用FormData转换数据后，就不用设置表头
+    xhr.send(fs);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        let res = JSON.parse(xhr.responseText)
+        if (res.code === 200) {
+          console.log(res.baseDir + res.filePath)
+          // 吧显示的图片换一下
+          $('#photo').attr('src', res.baseDir + res.filePath);
+          // 把选择的用户信息放进去某个栏
+          $('#headSrc').val(res.filePath)
+          console.log(res)
+        }
+
+      }
+    }
+  })
+
+  // 用户信息的添加
+  $('#myform .btn').on('click', function () {
+    if ($('.username').val().trim().length === 0) {
+      alert('用户名不能为空')
+    } else {
+      let sum = $('form').serialize();
+      $.ajax({
+        type: 'post',
+        url: 'http://127.0.0.1:8080/addNewHero',
+        data: sum,
+        success: function (hh) {
+         if (hh.code===200){  
+          alert(hh.msg)
+          location.href="./英雄列表.html"
+         } 
+        }
+      })
+    }
+  })
+</script>
+
+
+
+</html>
