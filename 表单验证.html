@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        input {
+            outline: none;
+            border: 1px solid #333;
+        }
+
+        .form {
+            width: 400px;
+            margin: 100px auto;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .row {
+            display: flex;
+        }
+
+        .cell {
+            padding: 0 10px;
+            line-height: 55px;
+        }
+
+        .f2 {
+            flex: 2;
+        }
+
+        .f3 {
+            flex: 3;
+        }
+
+        .control {
+            display: inline-block;
+            width: 100%;
+            height: 34px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            vertical-align: middle;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 6px 12px;
+            margin-bottom: 0;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: #333;
+            background-color: #fff;
+            border-color: #ccc;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form">
+        <form action="" id="registerForm" method="get">
+            <div class="row">
+                <div class="cell f2">请输入用户名：</div>
+                <div class="cell f3"><input type="text" class="control" name="userName"></div>
+            </div>
+            <div class="row">
+                <div class="cell f2">请输入密码：</div>
+                <div class="cell f3"><input type="text" class="control" name="password"></div>
+            </div>
+            <div class="row">
+                <div class="cell f2">请输入手机号码：</div>
+                <div class="cell f3"><input type="text" class="control" name="phoneNumber"></div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="cell f2"></div>
+                <div class="cell f3">
+                    <input type="submit" class="btn" value="提交">
+                </div>
+            </div>
+
+        </form>
+    </div>
+</body>
+<script>
+    /*
+        一般的方式实现表单的验证
+    */
+    let form = document.querySelector('#registerForm');
+
+    let strategies = {
+        isNonEmpty: function (val, errMsg) {
+            if (val === '') {
+                return errMsg;
+            }
+        },
+        
+        minLength: function (val, len, errMsg) {
+            if (val.length < len) {
+                return errMsg;
+            }
+        },
+
+        // 如果还有更多的验证规则，就在这里继续加
+        // 继续添加一个验证手机号码的方法
+        isMobile : function(val,errMsg){
+            // 验证是否是手机需要使用正则表达式 - 发视频看
+            if(!/(^1[3|5|8][0-9]{9}$)/.test(val)){
+                return errMsg;
+            }
+        }
+    }
+    
+    // 面向对象的套路 ： 抽象出类(构造函数),new 实例对象，调用实例对象去做事情
+    function Validator(){
+        // 装表单里面所需的所有的验证的函数
+        this.validateFuncs = [];
+    }
+    // 添加验证规则的方法、
+    // 验证是以每一个输入框为单位的，一个输入框可能对应多个验证的规则
+    Validator.prototype.add = function(dom,rules){
+        // 遍历规则数组，
+        for(let i = 0; i < rules.length; i++){
+            let rule = rules[i];
+            // 把验证的函数，放到函数数组里面
+            let fn = function(){
+                // rule 对象的 validateFunName 这个属性可能是由 : 分割的字符串
+                let pramArr = rule.validateFunName.split(':');
+                // console.log(pramArr);
+                let funName = pramArr.shift();
+                // 把errMsg放到数组的后面
+                pramArr.push(rule.errMsg); 
+                // 把dom.value放前面
+                pramArr.unshift(dom.value);
+                console.log(pramArr);
+                // console.log(funName);
+                // 此时调用 strategies[funName] 这个函数，可能是两个参数，可能是三个参数，还可能是更多个参数
+                // 函数名.apply(新this,[dom.value, ,errMsg])
+                // isNonEmpty和minLength两个函数里面都没有用到this,所以this是谁就无所谓的，新this可以随意写
+                return strategies[funName].apply(dom,pramArr);
+                // return strategies.isNonEmpty(form.password.value,'密码不能为空');
+            }
+            this.validateFuncs.push(fn);
+        }
+        
+    }
+    // 开始验证的方法
+    Validator.prototype.start = function(){
+        // 从函数的数组里面，调用每个函数，返回错误信息
+        for(let i = 0; i < this.validateFuncs.length; i++){
+            let errMsg = this.validateFuncs[i]();
+            if(errMsg){
+                return errMsg;
+            }
+        }
+    }
+
+    // 每当需要一个验证的表单，就new一个对象
+    let vld = new Validator();
+    vld.add(form.userName,
+    [{
+        validateFunName : 'isNonEmpty',
+        errMsg : '用户名不为空'
+    },
+    {
+        validateFunName : 'minLength:8',// 如果函数调用有多个参数，多个参数使用冒号隔开
+        errMsg: '用户名的长度不能小于8'
+    }]);
+
+    // 添加密码的验证
+    vld.add(form.password,[
+        {
+            validateFunName:'isNonEmpty',
+            errMsg : '密码不能为空'
+        },
+        {
+            validateFunName:'minLength:6',
+            errMsg : '密码的长度不能小于6位'
+        }
+    ]);
+   
+   // 添加手机的验证
+    vld.add(form.phoneNumber,[
+        { validateFunName :'isNonEmpty',errMsg :'手机号码不能为空' },
+        { validateFunName : 'isMobile' ,errMsg : '请填写正确的手机号码'}
+    ])
+
+
+    // 会在提交的时候进行验证
+    let btn = document.querySelector('.btn');
+    btn.onclick = function (e) {
+        e.preventDefault();
+        let errMsg = vld.start();
+        if (errMsg) {
+            alert(errMsg);
+        }
+    }
+    
+</script>
+
+</html>
