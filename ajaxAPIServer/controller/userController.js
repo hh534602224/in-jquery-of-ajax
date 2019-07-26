@@ -51,6 +51,7 @@ const userController = {
         userModel.doRegister({userName,password,phone},(err,result)=>{
             let response;
             if(err){
+                console.log(err)
                 response = {
                     code : 401,
                     msg : '服务器错误'

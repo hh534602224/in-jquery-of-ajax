@@ -94,6 +94,16 @@
       display: none;
       background-color: #C91623;
     }
+    span{
+      margin: 10px;
+      display: none;
+    }
+    .red{
+      color: red;
+    }
+    .lv{
+      color: rgba(30, 224, 30, 0.822);
+    }
   </style>
 </head>
 
@@ -104,18 +114,22 @@
         <li>
           <label for="">用户名</label>
           <input type="text" name="userName" class="name">
+          <span></span>
         </li>
         <li>
           <label for="">请设置密码</label>
           <input type="password" name="password" class="pass">
+       
         </li>
         <li>
           <label for="">请确认密码</label>
           <input type="password" name="" class="repass">
+          <span></span>
         </li>
         <li>
           <label for="">验证手机</label>
           <input type="text" name="phone" class="mobile">
+          <span></span>
         </li>
         <li>
           <label for="">短信验证码</label>
@@ -137,6 +151,100 @@
 <script src="../static/js/jquery.js"></script>
 <script>
 // 给用户名注册失去焦点的事件
+$('.name').on('blur',function(){
+  let userName=$('.name').val();
+  if (userName.trim()!=0){
+        // 不为空
+    $.ajax({
+    url:'http://127.0.0.1:8080/isUserNameExist',
+    data:{userName},
+    success:function(hh){
+        if(hh.code===200){
+              // 用户名可以用
+          $('ul>li:nth-child(1)>span').show().removeClass('red').addClass('lv').html(hh.msg)
+        }else{
+          // 用户名已存在的提示
+          $('ul>li:nth-child(1)>span').show().removeClass('lv').addClass('red').html(hh.msg)
+        }
+    }
+  })
+  }else{
+  // 为空
+  $('ul>li:nth-child(1)>span').show().removeClass('lv').addClass('red').html('用户名不能为空')
+  }
+  // console.log(123)
+})
+// 放密码和验证码
+let password,okpassword,code;
+// 密码的失焦事件
+$('.pass').on('blur',function(){
+  password=$('.pass').val();
+  if(password.trim()!=0){
+  //   // 上下两个输入框的判断
+    if(okpassword===password&&okpassword.length===password.length){
+      $('ul>li:nth-child(3)>span').show().removeClass('red').addClass('lv').html('两次密码一致')
+    }else{
+      $('ul>li:nth-child(3)>span').show().removeClass('lv').addClass('red').html('两次密码不一致')
+    }
+  }else{
+    // 为空
+  $('ul>li:nth-child(2)>span').show().removeClass('lv').addClass('red').html('密码不能为空')
+  }
+})
+
+// 确认密码的失焦事件
+$('.repass').on('blur',function(){
+  okpassword=$('.repass').val();
+  if(okpassword.trim()!=0){
+    // 上下两个输入框的判断
+    if(okpassword===password&&okpassword.length===password.length){
+      $('ul>li:nth-child(3)>span').show().removeClass('red').addClass('lv').html('两次密码一致')
+    }else{
+      $('ul>li:nth-child(3)>span').show().removeClass('lv').addClass('red').html('两次密码不一致')
+    }
+  }else{
+    // 为空
+  $('ul>li:nth-child(3)>span').show().removeClass('lv').addClass('red').html('请再次填写密码')
+  }
+})
+// 获取验证码验证手机事件
+$('.verify').on('click',function(){
+  let val=$('.mobile').val();
+  // 使用正则表达式判断
+  if(!/(^1[3|5|8][0-9]{9}$)/.test(val)){
+  $('ul>li:nth-child(4)>span').show().removeClass('lv').addClass('red').html('请正确填写手机')
+  }else{
+    // 手机号正确时ajax
+    $.ajax({
+      url:'http://127.0.0.1:8080/getCodeWithoutPhone',
+      success:function(hh){
+       $('ul>li:nth-child(4)>span').show().removeClass('red').addClass('lv').html('验证码：'+hh.code)
+        code=hh.code;
+      }
+    })
+  }
+})
+
+// 数据上传注册注册事件
+$('.submit ').on('click',function(){
+  let val=$('.code').val();
+  // 验证码正确时执行
+  if (code==val){
+  let sum=$('form').serialize();
+  console.log(sum)
+  $.ajax({
+    url:'http://127.0.0.1:8080/doRegister',
+    data:sum,
+    type:'post',
+    success:function(hh){
+      console.log(hh)
+    }
+  })
+  }else{
+    alert('验证码错误，请重新输入！')
+  }
+})
+
 
 
 
